@@ -11,6 +11,8 @@ import (
 
 var homeTemplate *template.Template
 
+var aboutTemplate *template.Template
+
 type _404 struct {
 }
 
@@ -31,13 +33,17 @@ func home(rw http.ResponseWriter, r *http.Request) {
 
 func about(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(rw, "About my gallery")
+	if err := aboutTemplate.Execute(rw, nil); err != nil {
+		log.Panic(err)
+	}
 }
 
 func main() {
 	var err error
 
 	homeTemplate, err = template.ParseFiles("views/home.gohtml")
+	aboutTemplate, err = template.ParseFiles("views/about.gohtml")
+
 	if err != nil {
 		log.Panic(err)
 	}
