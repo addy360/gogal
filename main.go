@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
-	"html/template"
+	"gogal/views"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-var homeTemplate *template.Template
+var homeView *views.View
 
-var aboutTemplate *template.Template
+var aboutView *views.View
 
 type _404 struct {
 }
@@ -25,31 +25,21 @@ func (notFound *_404) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 func home(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
-	if err := homeTemplate.Execute(rw, nil); err != nil {
-		log.Panic(err)
-	}
+	hasError(homeView.Render(rw, nil))
 
 }
 
 func about(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
-	if err := aboutTemplate.Execute(rw, nil); err != nil {
-		log.Panic(err)
-	}
+	hasError(aboutView.Render(rw, nil))
 }
 
 func main() {
 	var err error
 
-	homeTemplate, err = template.ParseFiles("views/home.gohtml")
-	if err != nil {
-		log.Panic(err)
-	}
-	aboutTemplate, err = template.ParseFiles("views/about.gohtml")
+	homeView = views.NewView("views/home.gohtml")
 
-	if err != nil {
-		log.Panic(err)
-	}
+	aboutView = views.NewView("views/about.gohtml")
 
 	r := mux.NewRouter()
 
@@ -61,5 +51,11 @@ func main() {
 	err = http.ListenAndServe(":8989", r)
 	if err != nil {
 		log.Panic(err)
+	}
+}
+
+func hasError(err error) {
+	if err != nil {
+		log.Panic(err.Error())
 	}
 }
