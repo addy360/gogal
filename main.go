@@ -8,7 +8,16 @@ import (
 
 func handleFunc(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(rw, "Welcome to my gallery")
+
+	switch r.URL.Path {
+	case "/":
+		fmt.Fprint(rw, "Welcome to my gallery")
+	case "/about":
+		fmt.Fprint(rw, "About page")
+	default:
+		fmt.Fprint(rw, "Page not found")
+	}
+
 }
 
 func main() {
