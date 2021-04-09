@@ -13,6 +13,10 @@ var homeView *views.View
 
 var aboutView *views.View
 
+var registerView *views.View
+
+var loginView *views.View
+
 type _404 struct {
 }
 
@@ -34,6 +38,16 @@ func about(rw http.ResponseWriter, r *http.Request) {
 	hasError(aboutView.Render(rw, nil))
 }
 
+func register(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "text/html")
+	hasError(registerView.Render(rw, nil))
+}
+
+func login(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "text/html")
+	hasError(loginView.Render(rw, nil))
+}
+
 func main() {
 	var err error
 
@@ -41,10 +55,16 @@ func main() {
 
 	aboutView = views.NewView("views/about.gohtml")
 
+	registerView = views.NewView("views/register.gohtml")
+
+	loginView = views.NewView("views/login.gohtml")
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", home)
 	r.HandleFunc("/about", about)
+	r.HandleFunc("/register", register)
+	r.HandleFunc("/login", login)
 
 	r.NotFoundHandler = &_404{}
 
