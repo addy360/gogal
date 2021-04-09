@@ -42,6 +42,9 @@ func main() {
 	var err error
 
 	homeTemplate, err = template.ParseFiles("views/home.gohtml")
+	if err != nil {
+		log.Panic(err)
+	}
 	aboutTemplate, err = template.ParseFiles("views/about.gohtml")
 
 	if err != nil {
