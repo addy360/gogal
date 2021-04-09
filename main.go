@@ -15,6 +15,7 @@ func handleFunc(rw http.ResponseWriter, r *http.Request) {
 	case "/about":
 		fmt.Fprint(rw, "About page")
 	default:
+		rw.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(rw, "Page not found")
 	}
 
