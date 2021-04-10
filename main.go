@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"gogal/controllers"
 	"gogal/views"
 	"log"
 	"net/http"
@@ -12,10 +13,6 @@ import (
 var homeView *views.View
 
 var aboutView *views.View
-
-var registerView *views.View
-
-var loginView *views.View
 
 type _404 struct {
 }
@@ -38,33 +35,20 @@ func about(rw http.ResponseWriter, r *http.Request) {
 	hasError(aboutView.Render(rw, nil))
 }
 
-func register(rw http.ResponseWriter, r *http.Request) {
-	rw.Header().Set("Content-Type", "text/html")
-	hasError(registerView.Render(rw, nil))
-}
-
-func login(rw http.ResponseWriter, r *http.Request) {
-	rw.Header().Set("Content-Type", "text/html")
-	hasError(loginView.Render(rw, nil))
-}
-
 func main() {
+	userController := controllers.NewUser()
 	var err error
 
 	homeView = views.NewView("views/home.gohtml")
 
 	aboutView = views.NewView("views/about.gohtml")
 
-	registerView = views.NewView("views/register.gohtml")
-
-	loginView = views.NewView("views/login.gohtml")
-
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", home)
 	r.HandleFunc("/about", about)
-	r.HandleFunc("/register", register)
-	r.HandleFunc("/login", login)
+	r.HandleFunc("/register", userController.New)
+	r.HandleFunc("/login", userController.Login)
 
 	r.NotFoundHandler = &_404{}
 
