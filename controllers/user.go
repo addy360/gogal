@@ -2,11 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"gogal/helpers"
 	"gogal/views"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/schema"
 )
 
 func NewUser() *User {
@@ -32,16 +31,11 @@ type UserForm struct {
 }
 
 func (u *User) Create(w http.ResponseWriter, r *http.Request) {
-
-	err := r.ParseForm()
+	var userForm UserForm
+	err := helpers.ParseForm(&userForm, r)
 	if err != nil {
 		log.Panic(err.Error())
 	}
-
-	dec := schema.NewDecoder()
-	var userForm UserForm
-	dec.Decode(&userForm, r.PostForm)
-
 	w.Header().Set("Content-Type", "text/html")
 
 	fmt.Fprint(w, userForm)
