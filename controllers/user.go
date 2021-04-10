@@ -3,21 +3,25 @@ package controllers
 import (
 	"fmt"
 	"gogal/helpers"
+	"gogal/models"
+	"gogal/services"
 	"gogal/views"
 	"log"
 	"net/http"
 )
 
-func NewUser() *User {
+func NewUser(us *services.UserService) *User {
 	return &User{
 		newView:   views.NewView("register"),
 		loginView: views.NewView("login"),
+		us:        us,
 	}
 }
 
 type User struct {
 	newView   *views.View
 	loginView *views.View
+	us        *services.UserService
 }
 
 func (u *User) New(w http.ResponseWriter, r *http.Request) {
@@ -35,8 +39,18 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err.Error())
 	}
+	user := &models.User{
+		Name:    userForm.Name,
+		Pasword: userForm.Password,
+	}
+	err = u.us.Create(user)
 
-	fmt.Fprint(w, userForm)
+	if err != nil {
+		fmt.Fprint(w, "Server error")
+		log.Println(err.Error())
+		return
+	}
+	fmt.Fprint(w, user)
 }
 
 func (u *User) Login(w http.ResponseWriter, r *http.Request) {

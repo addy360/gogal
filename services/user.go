@@ -8,17 +8,15 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewUserService() *UserService {
+func NewUserService(connectionString string) *UserService {
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  "user=postgres dbname=gogal port=5432 sslmode=disable",
+		DSN:                  connectionString,
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
 	}), &gorm.Config{})
 
 	if err != nil {
 		log.Panic(err.Error())
 	}
-
-	db.AutoMigrate(&models.User{})
 
 	return &UserService{
 		db: db.Debug(),
@@ -27,6 +25,11 @@ func NewUserService() *UserService {
 
 type UserService struct {
 	db *gorm.DB
+}
+
+func (us *UserService) TableRefresh() {
+	us.db.Migrator().DropTable(&models.User{})
+	us.db.AutoMigrate(&models.User{})
 }
 
 func (us *UserService) ById(id uint) (*models.User, error) {
