@@ -10,15 +10,18 @@ import (
 
 func NewUserService() *UserService {
 	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  "user=postgres dbname=gogal port=9920 sslmode=disable",
+		DSN:                  "user=postgres dbname=gogal port=5432 sslmode=disable",
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
 	}), &gorm.Config{})
 
 	if err != nil {
 		log.Panic(err.Error())
 	}
+
+	db.AutoMigrate(&models.User{})
+
 	return &UserService{
-		db: db,
+		db: db.Debug(),
 	}
 }
 
@@ -39,4 +42,16 @@ func (us *UserService) ById(id uint) (*models.User, error) {
 		return nil, err
 	}
 
+}
+
+func (us *UserService) Create(user *models.User) error {
+	return us.db.Create(user).Error
+}
+
+func (us *UserService) Update(user *models.User) error {
+	return us.db.Save(user).Error
+}
+
+func (us *UserService) Delete(user *models.User, userId uint) error {
+	return us.db.Delete(user, userId).Error
 }
