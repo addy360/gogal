@@ -39,5 +39,6 @@ type View struct {
 }
 
 func (v *View) Render(rw http.ResponseWriter, data interface{}) error {
+	rw.Header().Set("Content-Type", "text/html")
 	return v.Template.ExecuteTemplate(rw, v.Layout, data)
 }

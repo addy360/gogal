@@ -21,7 +21,6 @@ type User struct {
 }
 
 func (u *User) New(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
 	u.newView.Render(w, nil)
 }
 
@@ -36,12 +35,10 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err.Error())
 	}
-	w.Header().Set("Content-Type", "text/html")
 
 	fmt.Fprint(w, userForm)
 }
 
 func (u *User) Login(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	u.newView.Render(w, nil)
+	u.loginView.Render(w, nil)
 }
