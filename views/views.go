@@ -10,10 +10,11 @@ import (
 
 var layout string = "app"
 var layoutDir string = "views/layouts"
+var templateDir string = "views"
+var extention string = "gohtml"
 
 func NewView(files ...string) *View {
-
-	files = append(files, getLaouts()...)
+	files = append(appendToFiles(files), getLaouts()...)
 	t, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Panic(err)
@@ -41,4 +42,12 @@ type View struct {
 func (v *View) Render(rw http.ResponseWriter, data interface{}) error {
 	rw.Header().Set("Content-Type", "text/html")
 	return v.Template.ExecuteTemplate(rw, v.Layout, data)
+}
+
+func appendToFiles(files []string) []string {
+	var finalFiles []string
+	for _, v := range files {
+		finalFiles = append(finalFiles, fmt.Sprintf("%s/%s.%s", templateDir, v, extention))
+	}
+	return finalFiles
 }

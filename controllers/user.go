@@ -10,8 +10,8 @@ import (
 
 func NewUser() *User {
 	return &User{
-		newView:   views.NewView("views/register.gohtml"),
-		loginView: views.NewView("views/login.gohtml"),
+		newView:   views.NewView("register"),
+		loginView: views.NewView("login"),
 	}
 }
 

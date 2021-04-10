@@ -7,8 +7,8 @@ import (
 
 func NewPage() *Page {
 	return &Page{
-		homeView:  views.NewView("views/home.gohtml"),
-		aboutView: views.NewView("views/about.gohtml"),
+		homeView:  views.NewView("home"),
+		aboutView: views.NewView("about"),
 	}
 }
 
