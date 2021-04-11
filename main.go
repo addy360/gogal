@@ -34,7 +34,8 @@ func main() {
 	r.HandleFunc("/about", pagesController.About)
 	r.HandleFunc("/register", userController.New).Methods("GET")
 	r.HandleFunc("/register", userController.Create).Methods("POST")
-	r.HandleFunc("/login", userController.Login)
+	r.HandleFunc("/login", userController.Login).Methods("GET")
+	r.HandleFunc("/login", userController.SignIn).Methods("POST")
 
 	r.NotFoundHandler = &_404{}
 

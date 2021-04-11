@@ -34,15 +34,12 @@ type UserForm struct {
 }
 
 func (u *User) Create(w http.ResponseWriter, r *http.Request) {
-	var userForm UserForm
-	err := helpers.ParseForm(&userForm, r)
+	user, err := userFromRequest(r)
+
 	if err != nil {
-		log.Panic(err.Error())
+		log.Panic(err)
 	}
-	user := &models.User{
-		Name:    userForm.Name,
-		Pasword: userForm.Password,
-	}
+
 	err = u.us.Create(user)
 
 	if err != nil {
@@ -53,6 +50,27 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, user)
 }
 
+func userFromRequest(r *http.Request) (*models.User, error) {
+	var userForm UserForm
+	err := helpers.ParseForm(&userForm, r)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+	user := &models.User{
+		Name:    userForm.Name,
+		Pasword: userForm.Password,
+	}
+	return user, err
+}
+
 func (u *User) Login(w http.ResponseWriter, r *http.Request) {
 	u.loginView.Render(w, nil)
+}
+
+func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
+	user, err := userFromRequest(r)
+	if err != nil {
+		log.Panic(err)
+	}
+	fmt.Fprint(w, user)
 }
