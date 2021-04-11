@@ -83,7 +83,7 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *User) CookieTest(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("Email")
+	cookie, err := r.Cookie("remember")
 	if err != nil {
 		fmt.Fprint(w, "Not authorised")
 		return
