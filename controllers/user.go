@@ -47,7 +47,9 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 		return
 	}
-	fmt.Fprint(w, user)
+
+	u.us.SignUserIn(user, w)
+	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
 }
 
 func userFromRequest(r *http.Request) (*models.User, error) {
@@ -72,12 +74,12 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
-	authUser, err := u.us.Authenticate(w, user)
+	_, err = u.us.Authenticate(w, user)
 	if err != nil {
 		log.Panic(err.Error())
 	}
 
-	fmt.Fprint(w, authUser)
+	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
 }
 
 func (u *User) CookieTest(w http.ResponseWriter, r *http.Request) {

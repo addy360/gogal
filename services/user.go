@@ -98,12 +98,16 @@ func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*
 		return nil, err
 	}
 
+	us.SignUserIn(user, w)
+
+	return user, nil
+}
+
+func (us *UserService) SignUserIn(user *models.User, w http.ResponseWriter) {
 	cookie := http.Cookie{
 		Name:  "Email",
 		Value: user.Email,
 	}
 
 	http.SetCookie(w, &cookie)
-
-	return user, nil
 }
