@@ -3,6 +3,7 @@ package services
 import (
 	"gogal/models"
 	"log"
+	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
@@ -85,7 +86,7 @@ func (us *UserService) Delete(user *models.User, userId uint) error {
 	return us.db.Delete(user, userId).Error
 }
 
-func (us *UserService) Authenticate(user *models.User) (*models.User, error) {
+func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
 	plainText := user.Pasword
 	user, err := us.ByEmail(user.Email)
 	if err != nil {
@@ -96,6 +97,13 @@ func (us *UserService) Authenticate(user *models.User) (*models.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cookie := http.Cookie{
+		Name:  "Email",
+		Value: user.Email,
+	}
+
+	http.SetCookie(w, &cookie)
 
 	return user, nil
 }

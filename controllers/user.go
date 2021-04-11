@@ -72,7 +72,7 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
-	authUser, err := u.us.Authenticate(user)
+	authUser, err := u.us.Authenticate(w, user)
 	if err != nil {
 		log.Panic(err.Error())
 	}
