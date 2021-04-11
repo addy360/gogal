@@ -36,6 +36,7 @@ func main() {
 	r.HandleFunc("/register", userController.Create).Methods("POST")
 	r.HandleFunc("/login", userController.Login).Methods("GET")
 	r.HandleFunc("/login", userController.SignIn).Methods("POST")
+	r.HandleFunc("/cookie", userController.CookieTest)
 
 	r.NotFoundHandler = &_404{}
 
