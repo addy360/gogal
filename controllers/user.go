@@ -57,7 +57,7 @@ func userFromRequest(r *http.Request) (*models.User, error) {
 		log.Panic(err.Error())
 	}
 	user := &models.User{
-		Name:    userForm.Name,
+		Email:   userForm.Name,
 		Pasword: userForm.Password,
 	}
 	return user, err
@@ -72,5 +72,10 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
-	fmt.Fprint(w, user)
+	authUser, err := u.us.Authenticate(user)
+	if err != nil {
+		log.Panic(err.Error())
+	}
+
+	fmt.Fprint(w, authUser)
 }

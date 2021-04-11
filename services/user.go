@@ -48,6 +48,21 @@ func (us *UserService) ById(id uint) (*models.User, error) {
 
 }
 
+func (us *UserService) ByEmail(email string) (*models.User, error) {
+	var user models.User
+	err := us.db.Where("email = ?", email).First(&user).Error
+
+	switch err {
+	case gorm.ErrRecordNotFound:
+		return nil, ErrorNotFound
+	case nil:
+		return &user, nil
+	default:
+		return nil, err
+	}
+
+}
+
 const gogalPepper = "super-secret-key"
 
 func (us *UserService) Create(user *models.User) error {
@@ -68,4 +83,19 @@ func (us *UserService) Update(user *models.User) error {
 
 func (us *UserService) Delete(user *models.User, userId uint) error {
 	return us.db.Delete(user, userId).Error
+}
+
+func (us *UserService) Authenticate(user *models.User) (*models.User, error) {
+	plainText := user.Pasword
+	user, err := us.ByEmail(user.Email)
+	if err != nil {
+		return nil, err
+	}
+	passwordBs := []byte(gogalPepper + plainText)
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
