@@ -1,8 +1,11 @@
 package helpers
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"hash"
 	"net/http"
 
 	"github.com/gorilla/schema"
@@ -45,4 +48,22 @@ func ToString(nBytes uint) (string, error) {
 
 func GenerateRememberToken() (string, error) {
 	return ToString(64)
+}
+
+func NewHmac(key string) *HMAC {
+	h := hmac.New(sha256.New, []byte(key))
+	return &HMAC{
+		hmac: h,
+	}
+}
+
+func (h *HMAC) Hash(key string) string {
+	h.hmac.Reset()
+	h.hmac.Write([]byte(key))
+	b := h.hmac.Sum(nil)
+	return base64.URLEncoding.EncodeToString(b)
+}
+
+type HMAC struct {
+	hmac hash.Hash
 }
