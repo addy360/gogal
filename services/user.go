@@ -4,6 +4,7 @@ import (
 	"gogal/models"
 	"log"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -47,7 +48,17 @@ func (us *UserService) ById(id uint) (*models.User, error) {
 
 }
 
+const gogalPepper = "super-secret-key"
+
 func (us *UserService) Create(user *models.User) error {
+	passwordBs := []byte(gogalPepper + user.Pasword)
+	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hashBs)
+	user.Pasword = ""
 	return us.db.Create(user).Error
 }
 
