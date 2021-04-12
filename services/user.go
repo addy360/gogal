@@ -177,7 +177,7 @@ func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*model
 	return user, nil
 }
 
-func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
+func (gd GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
 	cookie := http.Cookie{
 		Name:  "remember",
 		Value: user.Remember,
