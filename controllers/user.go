@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-func NewUser(us *services.UserService) *User {
+func NewUser(us services.AuthService) *User {
 	return &User{
 		newView:   views.NewView("register"),
 		loginView: views.NewView("login"),
@@ -21,7 +21,7 @@ func NewUser(us *services.UserService) *User {
 type User struct {
 	newView   *views.View
 	loginView *views.View
-	us        *services.UserService
+	us        services.AuthService
 }
 
 func (u *User) New(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,8 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u.us.UserDb.(*services.GormDb).SignUserIn(user, w)
+	u.us.SignUserIn(user, w)
+
 	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
 }
 
@@ -74,7 +75,7 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
-	_, err = u.us.UserDb.(*services.GormDb).Authenticate(w, user)
+	_, err = u.us.Authenticate(w, user)
 	if err != nil {
 		log.Panic(err.Error())
 	}

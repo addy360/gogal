@@ -22,12 +22,10 @@ func (notFound *_404) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 func main() {
 	connectionString := "user=postgres dbname=gogal port=5432 sslmode=disable"
-	us := *services.NewUserService(connectionString)
-	userController := controllers.NewUser(&us)
+	us := services.NewUserService(connectionString)
+	userController := controllers.NewUser(us)
 	pagesController := controllers.NewPage()
-
 	us.TableRefresh()
-
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", pagesController.Index)

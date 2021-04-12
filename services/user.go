@@ -19,16 +19,25 @@ type UserDb interface {
 	Update(user *models.User) error
 	Delete(user *models.User, userId uint) error
 	TableRefresh()
+	Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error)
+	SignUserIn(user *models.User, w http.ResponseWriter)
+}
+
+type AuthService interface {
+	// Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error)
+	UserDb
 }
 
 // testing interface just in case
 var _ UserDb = &GormDb{}
 
-func NewUserService(connectionString string) *UserService {
+func NewUserService(connectionString string) AuthService {
 	gd := NewGormDb(connectionString)
 
 	return &UserService{
-		UserDb: &UserValidator{gd},
+		UserDb: &UserValidator{
+			UserDb: gd,
+		},
 	}
 }
 
@@ -54,13 +63,92 @@ type UserService struct {
 	UserDb
 }
 
+func (us *UserService) ByRemember(remember string) (*models.User, error) {
+	return nil, nil
+}
+func (us *UserService) ById(id uint) (*models.User, error) {
+	return nil, nil
+}
+func (us *UserService) ByEmail(email string) (*models.User, error) {
+	return nil, nil
+}
+func (us *UserService) Create(user *models.User) error {
+	return us.UserDb.Create(user)
+}
+func (us *UserService) Update(user *models.User) error {
+	return nil
+}
+func (us *UserService) Delete(user *models.User, userId uint) error {
+	return nil
+}
+func (us *UserService) TableRefresh() {
+	us.UserDb.TableRefresh()
+}
+
+func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+	return us.UserDb.Authenticate(w, user)
+}
+
 type UserValidator struct {
 	UserDb
+}
+
+func (uv *UserValidator) ByRemember(remember string) (*models.User, error) {
+
+	return nil, nil
+}
+func (uv *UserValidator) ById(id uint) (*models.User, error) {
+	return nil, nil
+}
+func (uv *UserValidator) ByEmail(email string) (*models.User, error) {
+	return nil, nil
+}
+func (uv *UserValidator) Create(user *models.User) error {
+	return uv.UserDb.Create(user)
+}
+func (uv *UserValidator) Update(user *models.User) error {
+	return nil
+}
+func (uv *UserValidator) Delete(user *models.User, userId uint) error {
+	return nil
+}
+func (uv *UserValidator) TableRefresh() {
+	uv.UserDb.TableRefresh()
+}
+
+func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+	return uv.UserDb.Authenticate(w, user)
+}
+
+func (uv *UserValidator) SignUserIn(user *models.User, w http.ResponseWriter) {
+	uv.UserDb.SignUserIn(user, w)
 }
 
 type GormDb struct {
 	db   *gorm.DB
 	hmac *helpers.HMAC
+}
+
+func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+	plainText := user.Pasword
+	user, err := gd.ByEmail(user.Email)
+	if err != nil {
+		return nil, err
+	}
+	passwordBs := []byte(gogalPepper + plainText)
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
+	if err != nil {
+		return nil, err
+	}
+
+	err = generateRemember(user, *gd)
+	if err != nil {
+		return nil, err
+	}
+
+	gd.SignUserIn(user, w)
+
+	return user, nil
 }
 
 func (gd *GormDb) TableRefresh() {
@@ -155,29 +243,7 @@ func (gd *GormDb) Delete(user *models.User, userId uint) error {
 	return gd.db.Delete(user, userId).Error
 }
 
-func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-	plainText := user.Pasword
-	user, err := gd.ByEmail(user.Email)
-	if err != nil {
-		return nil, err
-	}
-	passwordBs := []byte(gogalPepper + plainText)
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = generateRemember(user, *gd)
-	if err != nil {
-		return nil, err
-	}
-
-	gd.SignUserIn(user, w)
-
-	return user, nil
-}
-
-func (gd GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
+func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
 	cookie := http.Cookie{
 		Name:  "remember",
 		Value: user.Remember,
