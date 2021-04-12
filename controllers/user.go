@@ -48,7 +48,7 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u.us.SignUserIn(user, w)
+	u.us.UserDb.(*services.GormDb).SignUserIn(user, w)
 	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
 }
 
@@ -74,7 +74,7 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
-	_, err = u.us.Authenticate(w, user)
+	_, err = u.us.UserDb.(*services.GormDb).Authenticate(w, user)
 	if err != nil {
 		log.Panic(err.Error())
 	}

@@ -11,7 +11,28 @@ import (
 	"gorm.io/gorm"
 )
 
+type UserDb interface {
+	ByRemember(remember string) (*models.User, error)
+	ById(id uint) (*models.User, error)
+	ByEmail(email string) (*models.User, error)
+	Create(user *models.User) error
+	Update(user *models.User) error
+	Delete(user *models.User, userId uint) error
+	TableRefresh()
+}
+
+// testing interface just in case
+var _ UserDb = &GormDb{}
+
 func NewUserService(connectionString string) *UserService {
+	gd := NewGormDb(connectionString)
+
+	return &UserService{
+		UserDb: &UserValidator{gd},
+	}
+}
+
+func NewGormDb(connectionString string) *GormDb {
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  connectionString,
 		PreferSimpleProtocol: true, // disables implicit prepared statement usage
@@ -23,25 +44,33 @@ func NewUserService(connectionString string) *UserService {
 
 	h := helpers.NewHmac("super-secret-key")
 
-	return &UserService{
+	return &GormDb{
 		db:   db.Debug(),
 		hmac: h,
 	}
 }
 
 type UserService struct {
+	UserDb
+}
+
+type UserValidator struct {
+	UserDb
+}
+
+type GormDb struct {
 	db   *gorm.DB
 	hmac *helpers.HMAC
 }
 
-func (us *UserService) TableRefresh() {
-	us.db.Migrator().DropTable(&models.User{})
-	us.db.AutoMigrate(&models.User{})
+func (gd *GormDb) TableRefresh() {
+	gd.db.Migrator().DropTable(&models.User{})
+	gd.db.AutoMigrate(&models.User{})
 }
 
-func (us *UserService) ById(id uint) (*models.User, error) {
+func (gd *GormDb) ById(id uint) (*models.User, error) {
 	var user models.User
-	err := us.db.First(&user, id).Error
+	err := gd.db.First(&user, id).Error
 
 	switch err {
 	case gorm.ErrRecordNotFound:
@@ -54,9 +83,9 @@ func (us *UserService) ById(id uint) (*models.User, error) {
 
 }
 
-func (us *UserService) ByEmail(email string) (*models.User, error) {
+func (gd *GormDb) ByEmail(email string) (*models.User, error) {
 	var user models.User
-	err := us.db.Where("email = ?", email).First(&user).Error
+	err := gd.db.Where("email = ?", email).First(&user).Error
 
 	switch err {
 	case gorm.ErrRecordNotFound:
@@ -69,10 +98,10 @@ func (us *UserService) ByEmail(email string) (*models.User, error) {
 
 }
 
-func (us *UserService) ByRemember(remember string) (*models.User, error) {
+func (gd *GormDb) ByRemember(remember string) (*models.User, error) {
 	var user models.User
-	remember_token := us.hmac.Hash(remember)
-	err := us.db.Where("remember_token = ?", remember_token).First(&user).Error
+	remember_token := gd.hmac.Hash(remember)
+	err := gd.db.Where("remember_token = ?", remember_token).First(&user).Error
 
 	switch err {
 	case gorm.ErrRecordNotFound:
@@ -87,7 +116,7 @@ func (us *UserService) ByRemember(remember string) (*models.User, error) {
 
 const gogalPepper = "super-secret-key"
 
-func (us *UserService) Create(user *models.User) error {
+func (gd *GormDb) Create(user *models.User) error {
 	passwordBs := []byte(gogalPepper + user.Pasword)
 	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
 	if err != nil {
@@ -97,15 +126,15 @@ func (us *UserService) Create(user *models.User) error {
 	user.PasswordHash = string(hashBs)
 	user.Pasword = ""
 
-	err = generateRemember(user, us)
+	err = generateRemember(user, *gd)
 	if err != nil {
 		return err
 	}
 
-	return us.db.Create(user).Error
+	return gd.db.Create(user).Error
 }
 
-func generateRemember(user *models.User, us *UserService) error {
+func generateRemember(user *models.User, gd GormDb) error {
 	var err error
 	if user.Remember == "" {
 		user.Remember, err = helpers.GenerateRememberToken()
@@ -114,21 +143,21 @@ func generateRemember(user *models.User, us *UserService) error {
 		}
 	}
 
-	user.RememberToken = us.hmac.Hash(user.Remember)
+	user.RememberToken = gd.hmac.Hash(user.Remember)
 	return nil
 }
 
-func (us *UserService) Update(user *models.User) error {
-	return us.db.Save(user).Error
+func (gd *GormDb) Update(user *models.User) error {
+	return gd.db.Save(user).Error
 }
 
-func (us *UserService) Delete(user *models.User, userId uint) error {
-	return us.db.Delete(user, userId).Error
+func (gd *GormDb) Delete(user *models.User, userId uint) error {
+	return gd.db.Delete(user, userId).Error
 }
 
-func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
 	plainText := user.Pasword
-	user, err := us.ByEmail(user.Email)
+	user, err := gd.ByEmail(user.Email)
 	if err != nil {
 		return nil, err
 	}
@@ -138,17 +167,17 @@ func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*
 		return nil, err
 	}
 
-	err = generateRemember(user, us)
+	err = generateRemember(user, *gd)
 	if err != nil {
 		return nil, err
 	}
 
-	us.SignUserIn(user, w)
+	gd.SignUserIn(user, w)
 
 	return user, nil
 }
 
-func (us *UserService) SignUserIn(user *models.User, w http.ResponseWriter) {
+func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
 	cookie := http.Cookie{
 		Name:  "remember",
 		Value: user.Remember,
