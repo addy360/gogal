@@ -94,7 +94,7 @@ type UserValidator struct {
 
 func (uv *UserValidator) ByRemember(remember string) (*models.User, error) {
 	remember_token := uv.hmac.Hash(remember)
-	return uv.ByRemember(remember_token)
+	return uv.UserDb.ByRemember(remember_token)
 }
 func (uv *UserValidator) ById(id uint) (*models.User, error) {
 	return nil, nil
