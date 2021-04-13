@@ -103,20 +103,12 @@ func (uv *UserValidator) ByEmail(email string) (*models.User, error) {
 	return nil, nil
 }
 func (uv *UserValidator) Create(user *models.User) error {
-	passwordBs := []byte(gogalPepper + user.Pasword)
 
-	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
+	err := Validate(user, uv.GenerateRememberToken, uv.EncryptPassword)
 	if err != nil {
 		return err
 	}
 
-	err = generateRemember(user, *uv)
-	if err != nil {
-		return err
-	}
-
-	user.PasswordHash = string(hashBs)
-	user.Pasword = ""
 	return uv.UserDb.Create(user)
 }
 func (uv *UserValidator) Update(user *models.User) error {
@@ -138,22 +130,18 @@ func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) 
 		return nil, err
 	}
 
-	err = Validate(user, uv.ValidatePassword)
+	err = Validate(user, uv.ValidatePassword, uv.GenerateRememberToken)
 	if err != nil {
 		return nil, err
 	}
-
-	err = generateRemember(user, *uv)
-	if err != nil {
-		return nil, err
-	}
-
 	return uv.UserDb.Authenticate(w, user)
 }
 
 func (uv *UserValidator) SignUserIn(user *models.User, w http.ResponseWriter) {
 	uv.UserDb.SignUserIn(user, w)
 }
+
+type ValidatorFunc func(user *models.User) error
 
 func Validate(user *models.User, vfunc ...ValidatorFunc) error {
 	for _, vf := range vfunc {
@@ -162,6 +150,18 @@ func Validate(user *models.User, vfunc ...ValidatorFunc) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (uv *UserValidator) EncryptPassword(user *models.User) error {
+	passwordBs := []byte(gogalPepper + user.Pasword)
+	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hashBs)
+	user.Pasword = ""
 	return nil
 }
 
@@ -179,7 +179,18 @@ func (uv *UserValidator) ValidatePassword(user *models.User) error {
 	return nil
 }
 
-type ValidatorFunc func(user *models.User) error
+func (uv *UserValidator) GenerateRememberToken(user *models.User) error {
+	var err error
+	if user.Remember == "" {
+		user.Remember, err = helpers.GenerateRememberToken()
+		if err != nil {
+			return err
+		}
+	}
+
+	user.RememberToken = uv.hmac.Hash(user.Remember)
+	return nil
+}
 
 type GormDb struct {
 	db *gorm.DB
