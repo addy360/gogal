@@ -104,6 +104,7 @@ func (uv *UserValidator) ByEmail(email string) (*models.User, error) {
 }
 func (uv *UserValidator) Create(user *models.User) error {
 	passwordBs := []byte(gogalPepper + user.Pasword)
+
 	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -137,6 +138,11 @@ func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) 
 		return nil, err
 	}
 
+	err = Validate(user, uv.ValidatePassword)
+	if err != nil {
+		return nil, err
+	}
+
 	err = generateRemember(user, *uv)
 	if err != nil {
 		return nil, err
@@ -159,17 +165,14 @@ func Validate(user *models.User, vfunc ...ValidatorFunc) error {
 	return nil
 }
 
-func (uv *UserValidator) EncryptPassword(user *models.User) error {
+func (uv *UserValidator) ValidatePassword(user *models.User) error {
 	if user.Pasword == "" {
 		return nil
 	}
-	err := Validate(user, uv.EncryptPassword)
-	if err != nil {
-		return nil
-	}
+
 	plainText := user.Pasword
 	passwordBs := []byte(gogalPepper + plainText)
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
+	err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
 	if err != nil {
 		return err
 	}
