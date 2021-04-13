@@ -122,14 +122,16 @@ func (uv *UserValidator) Update(user *models.User) error {
 	return nil
 }
 func (uv *UserValidator) Delete(user *models.User, userId uint) error {
-	return nil
+	if userId < 1 {
+		return ErrorInvalidId
+	}
+	return uv.UserDb.Delete(user, userId)
 }
 func (uv *UserValidator) TableRefresh() {
 	uv.UserDb.TableRefresh()
 }
 
 func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-	plainText := user.Pasword
 	user, err := uv.UserDb.ByEmail(user.Email)
 	if err != nil {
 		return nil, err
@@ -140,18 +142,41 @@ func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) 
 		return nil, err
 	}
 
-	passwordBs := []byte(gogalPepper + plainText)
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
-	if err != nil {
-		return nil, err
-	}
-
 	return uv.UserDb.Authenticate(w, user)
 }
 
 func (uv *UserValidator) SignUserIn(user *models.User, w http.ResponseWriter) {
 	uv.UserDb.SignUserIn(user, w)
 }
+
+func Validate(user *models.User, vfunc ...ValidatorFunc) error {
+	for _, vf := range vfunc {
+		err := vf(user)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (uv *UserValidator) EncryptPassword(user *models.User) error {
+	if user.Pasword == "" {
+		return nil
+	}
+	err := Validate(user, uv.EncryptPassword)
+	if err != nil {
+		return nil
+	}
+	plainText := user.Pasword
+	passwordBs := []byte(gogalPepper + plainText)
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type ValidatorFunc func(user *models.User) error
 
 type GormDb struct {
 	db *gorm.DB
