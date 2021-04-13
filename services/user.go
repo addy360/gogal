@@ -277,16 +277,3 @@ func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
 
 	http.SetCookie(w, &cookie)
 }
-
-func generateRemember(user *models.User, uv UserValidator) error {
-	var err error
-	if user.Remember == "" {
-		user.Remember, err = helpers.GenerateRememberToken()
-		if err != nil {
-			return err
-		}
-	}
-
-	user.RememberToken = uv.hmac.Hash(user.Remember)
-	return nil
-}
