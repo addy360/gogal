@@ -33,10 +33,11 @@ var _ UserDb = &GormDb{}
 
 func NewUserService(connectionString string) AuthService {
 	gd := NewGormDb(connectionString)
-
+	h := helpers.NewHmac("super-secret-key")
 	return &UserService{
 		UserDb: &UserValidator{
 			UserDb: gd,
+			hmac:   h,
 		},
 	}
 }
@@ -51,11 +52,8 @@ func NewGormDb(connectionString string) *GormDb {
 		log.Panic(err.Error())
 	}
 
-	h := helpers.NewHmac("super-secret-key")
-
 	return &GormDb{
-		db:   db.Debug(),
-		hmac: h,
+		db: db.Debug(),
 	}
 }
 
@@ -91,11 +89,12 @@ func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*
 
 type UserValidator struct {
 	UserDb
+	hmac *helpers.HMAC
 }
 
 func (uv *UserValidator) ByRemember(remember string) (*models.User, error) {
-
-	return nil, nil
+	remember_token := uv.hmac.Hash(remember)
+	return uv.ByRemember(remember_token)
 }
 func (uv *UserValidator) ById(id uint) (*models.User, error) {
 	return nil, nil
@@ -104,6 +103,19 @@ func (uv *UserValidator) ByEmail(email string) (*models.User, error) {
 	return nil, nil
 }
 func (uv *UserValidator) Create(user *models.User) error {
+	passwordBs := []byte(gogalPepper + user.Pasword)
+	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	err = generateRemember(user, *uv)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hashBs)
+	user.Pasword = ""
 	return uv.UserDb.Create(user)
 }
 func (uv *UserValidator) Update(user *models.User) error {
@@ -117,6 +129,23 @@ func (uv *UserValidator) TableRefresh() {
 }
 
 func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+	plainText := user.Pasword
+	user, err := uv.UserDb.ByEmail(user.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = generateRemember(user, *uv)
+	if err != nil {
+		return nil, err
+	}
+
+	passwordBs := []byte(gogalPepper + plainText)
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
+	if err != nil {
+		return nil, err
+	}
+
 	return uv.UserDb.Authenticate(w, user)
 }
 
@@ -125,26 +154,10 @@ func (uv *UserValidator) SignUserIn(user *models.User, w http.ResponseWriter) {
 }
 
 type GormDb struct {
-	db   *gorm.DB
-	hmac *helpers.HMAC
+	db *gorm.DB
 }
 
 func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-	plainText := user.Pasword
-	user, err := gd.ByEmail(user.Email)
-	if err != nil {
-		return nil, err
-	}
-	passwordBs := []byte(gogalPepper + plainText)
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), passwordBs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = generateRemember(user, *gd)
-	if err != nil {
-		return nil, err
-	}
 
 	gd.SignUserIn(user, w)
 
@@ -186,9 +199,9 @@ func (gd *GormDb) ByEmail(email string) (*models.User, error) {
 
 }
 
-func (gd *GormDb) ByRemember(remember string) (*models.User, error) {
+func (gd *GormDb) ByRemember(remember_token string) (*models.User, error) {
 	var user models.User
-	remember_token := gd.hmac.Hash(remember)
+
 	err := gd.db.Where("remember_token = ?", remember_token).First(&user).Error
 
 	switch err {
@@ -205,34 +218,8 @@ func (gd *GormDb) ByRemember(remember string) (*models.User, error) {
 const gogalPepper = "super-secret-key"
 
 func (gd *GormDb) Create(user *models.User) error {
-	passwordBs := []byte(gogalPepper + user.Pasword)
-	hashBs, err := bcrypt.GenerateFromPassword(passwordBs, bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
-	user.PasswordHash = string(hashBs)
-	user.Pasword = ""
-
-	err = generateRemember(user, *gd)
-	if err != nil {
-		return err
-	}
 
 	return gd.db.Create(user).Error
-}
-
-func generateRemember(user *models.User, gd GormDb) error {
-	var err error
-	if user.Remember == "" {
-		user.Remember, err = helpers.GenerateRememberToken()
-		if err != nil {
-			return err
-		}
-	}
-
-	user.RememberToken = gd.hmac.Hash(user.Remember)
-	return nil
 }
 
 func (gd *GormDb) Update(user *models.User) error {
@@ -250,4 +237,17 @@ func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
 	}
 
 	http.SetCookie(w, &cookie)
+}
+
+func generateRemember(user *models.User, uv UserValidator) error {
+	var err error
+	if user.Remember == "" {
+		user.Remember, err = helpers.GenerateRememberToken()
+		if err != nil {
+			return err
+		}
+	}
+
+	user.RememberToken = uv.hmac.Hash(user.Remember)
+	return nil
 }
