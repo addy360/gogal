@@ -32,6 +32,9 @@ func main() {
 	galleryController := controllers.NewGarrely(gs)
 	us.TableRefresh()
 	gs.TableRefresh()
+
+	// middlewares
+	isLoggedIn := middlewares.NewAuthMiddelware(&us)
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", pagesController.Index)
@@ -41,11 +44,10 @@ func main() {
 	r.HandleFunc("/login", userController.Login).Methods("GET")
 	r.HandleFunc("/login", userController.SignIn).Methods("POST")
 	r.HandleFunc("/cookie", userController.CookieTest)
-	isLoggedIn := middlewares.NewAuthMiddelware(&us)
 
-	r.HandleFunc("/gallery/show", isLoggedIn.IsLoggedIn(http.HandlerFunc(galleryController.Show)))
-	r.HandleFunc("/gallery/create", galleryController.Create).Methods("GET")
-	r.HandleFunc("/gallery/store", galleryController.CreateGallery).Methods("POST")
+	r.HandleFunc("/gallery/show", isLoggedIn.IsLoggedIn(galleryController.Show))
+	r.HandleFunc("/gallery/create", isLoggedIn.IsLoggedIn(galleryController.Create)).Methods("GET")
+	r.HandleFunc("/gallery/store", isLoggedIn.IsLoggedIn(galleryController.CreateGallery)).Methods("POST")
 
 	r.NotFoundHandler = &_404{}
 
