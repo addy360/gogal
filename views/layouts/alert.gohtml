@@ -1,19 +1,21 @@
 {{ define "alert"	}}
 
+{{ if .Message	}}
 <div class="container">
     <div class="row">
         <div class="col-6 mx-auto">
-            <div class="alert alert-success alert-dismissible" role="alert">
+            <div class="alert alert-{{ .Level	}} alert-dismissible" role="alert">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                     <span aria-hidden="true" >&times;</span>
                 </button>
-                default alert template for an app
+                {{ .Message	}}
             </div>
         </div>
     </div>
 
 
 </div>
+{{ end	}}
 
 
 {{ end	}}

@@ -25,7 +25,15 @@ type User struct {
 }
 
 func (u *User) New(w http.ResponseWriter, r *http.Request) {
-	u.newView.Render(w, nil)
+	a := services.Alert{
+		Level:   "danger",
+		Message: "This is the danger example",
+	}
+
+	data := map[string]interface{}{
+		"Alert": a,
+	}
+	u.newView.Render(w, data)
 }
 
 type UserForm struct {
