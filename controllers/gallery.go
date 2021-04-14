@@ -1,20 +1,23 @@
 package controllers
 
 import (
+	"gogal/services"
 	"gogal/views"
 	"net/http"
 )
 
-func NewGarrely() *Garrely {
+func NewGarrely(gs services.GalleryService) *Garrely {
 	return &Garrely{
 		showView:   views.NewView("galleries"),
 		createView: views.NewView("create_gallery"),
+		gs:         gs,
 	}
 }
 
 type Garrely struct {
 	showView   *views.View
 	createView *views.View
+	gs         services.GalleryService
 }
 
 func (g *Garrely) Show(w http.ResponseWriter, r *http.Request) {

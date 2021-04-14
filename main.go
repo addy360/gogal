@@ -25,10 +25,12 @@ func main() {
 	connectionString := "user=postgres dbname=gogal port=5432 sslmode=disable"
 	db := helpers.DbConnection(connectionString)
 	us := services.NewUserService(db)
+	gs := services.NewGalleryService(db)
 	userController := controllers.NewUser(us)
 	pagesController := controllers.NewPage()
-	galleryController := controllers.NewGarrely()
+	galleryController := controllers.NewGarrely(gs)
 	us.TableRefresh()
+	gs.TableRefresh()
 	r := mux.NewRouter()
 
 	r.HandleFunc("/", pagesController.Index)
