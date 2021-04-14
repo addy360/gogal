@@ -123,5 +123,17 @@ func (u *User) CookieTest(w http.ResponseWriter, r *http.Request) {
 		u.loginView.Render(w, data)
 	}
 
+	user, err := u.us.ByRemember(cookie.Value)
+	if err != nil {
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.loginView.Render(w, data)
+	}
+
+	fmt.Fprint(w, user)
 	fmt.Fprint(w, cookie)
 }

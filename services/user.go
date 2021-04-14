@@ -52,7 +52,7 @@ type UserService struct {
 }
 
 func (us *UserService) ByRemember(remember string) (*models.User, error) {
-	return nil, nil
+	return us.UserDb.ByRemember(remember)
 }
 func (us *UserService) ById(id uint) (*models.User, error) {
 	return nil, nil
