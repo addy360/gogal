@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gogal/controllers"
+	"gogal/helpers"
 	"gogal/services"
 	"log"
 	"net/http"
@@ -22,7 +23,8 @@ func (notFound *_404) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 func main() {
 	connectionString := "user=postgres dbname=gogal port=5432 sslmode=disable"
-	us := services.NewUserService(connectionString)
+	db := helpers.DbConnection(connectionString)
+	us := services.NewUserService(db)
 	userController := controllers.NewUser(us)
 	pagesController := controllers.NewPage()
 	galleryController := controllers.NewGarrely()

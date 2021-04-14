@@ -6,9 +6,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"hash"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/schema"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func ParseForm(form interface{}, r *http.Request) error {
@@ -66,4 +69,17 @@ func (h *HMAC) Hash(key string) string {
 
 type HMAC struct {
 	hmac hash.Hash
+}
+
+func DbConnection(connectionString string) *gorm.DB {
+	db, err := gorm.Open(postgres.New(postgres.Config{
+		DSN:                  connectionString,
+		PreferSimpleProtocol: true, // disables implicit prepared statement usage
+	}), &gorm.Config{})
+
+	if err != nil {
+		log.Panic(err.Error())
+	}
+
+	return db
 }

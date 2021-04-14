@@ -3,11 +3,9 @@ package services
 import (
 	"gogal/helpers"
 	"gogal/models"
-	"log"
 	"net/http"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -31,8 +29,8 @@ type AuthService interface {
 // testing interface just in case
 var _ UserDb = &GormDb{}
 
-func NewUserService(connectionString string) AuthService {
-	gd := NewGormDb(connectionString)
+func NewUserService(db *gorm.DB) AuthService {
+	gd := NewGormDb(db)
 	h := helpers.NewHmac("super-secret-key")
 	return &UserService{
 		UserDb: &UserValidator{
@@ -42,15 +40,7 @@ func NewUserService(connectionString string) AuthService {
 	}
 }
 
-func NewGormDb(connectionString string) *GormDb {
-	db, err := gorm.Open(postgres.New(postgres.Config{
-		DSN:                  connectionString,
-		PreferSimpleProtocol: true, // disables implicit prepared statement usage
-	}), &gorm.Config{})
-
-	if err != nil {
-		log.Panic(err.Error())
-	}
+func NewGormDb(db *gorm.DB) *GormDb {
 
 	return &GormDb{
 		db: db.Debug(),
