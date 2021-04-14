@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"gogal/helpers"
 	"gogal/models"
 	"log"
@@ -20,10 +21,10 @@ type UserDb interface {
 	Delete(user *models.User, userId uint) error
 	TableRefresh()
 	Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error)
-	SignUserIn(user *models.User, w http.ResponseWriter)
 }
 
 type AuthService interface {
+	SignUserIn(user *models.User, w http.ResponseWriter)
 	// Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error)
 	UserDb
 }
@@ -62,7 +63,7 @@ type UserService struct {
 }
 
 func (us *UserService) ByRemember(remember string) (*models.User, error) {
-	return nil, nil
+	return us.UserDb.ByRemember(remember)
 }
 func (us *UserService) ById(id uint) (*models.User, error) {
 	return nil, nil
@@ -83,9 +84,19 @@ func (us *UserService) TableRefresh() {
 	us.UserDb.TableRefresh()
 }
 
-func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-	return us.UserDb.Authenticate(w, user)
+func (us *UserService) SignUserIn(user *models.User, w http.ResponseWriter) {
+	cookie := http.Cookie{
+		Name:  "remember",
+		Value: user.Remember,
+	}
+
+	http.SetCookie(w, &cookie)
 }
+
+// func (us *UserService) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+// 	fmt.Println("Userservice Auth called")
+// 	return us.UserDb.Authenticate(w, user)
+// }
 
 type UserValidator struct {
 	UserDb
@@ -125,20 +136,17 @@ func (uv *UserValidator) TableRefresh() {
 }
 
 func (uv *UserValidator) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-	user, err := uv.UserDb.ByEmail(user.Email)
+	usr, err := uv.UserDb.ByEmail(user.Email)
+	if err != nil {
+		return nil, err
+	}
+	err = Validate(usr, uv.GenerateRememberToken, uv.ValidatePassword)
 	if err != nil {
 		return nil, err
 	}
 
-	err = Validate(user, uv.ValidatePassword, uv.GenerateRememberToken)
-	if err != nil {
-		return nil, err
-	}
+	uv.UserDb.Update(user)
 	return uv.UserDb.Authenticate(w, user)
-}
-
-func (uv *UserValidator) SignUserIn(user *models.User, w http.ResponseWriter) {
-	uv.UserDb.SignUserIn(user, w)
 }
 
 type ValidatorFunc func(user *models.User) error
@@ -186,21 +194,15 @@ func (uv *UserValidator) GenerateRememberToken(user *models.User) error {
 		if err != nil {
 			return err
 		}
-	}
 
+	}
 	user.RememberToken = uv.hmac.Hash(user.Remember)
+
 	return nil
 }
 
 type GormDb struct {
 	db *gorm.DB
-}
-
-func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
-
-	gd.SignUserIn(user, w)
-
-	return user, nil
 }
 
 func (gd *GormDb) TableRefresh() {
@@ -262,6 +264,7 @@ func (gd *GormDb) Create(user *models.User) error {
 }
 
 func (gd *GormDb) Update(user *models.User) error {
+	fmt.Print(*user)
 	return gd.db.Save(user).Error
 }
 
@@ -269,11 +272,11 @@ func (gd *GormDb) Delete(user *models.User, userId uint) error {
 	return gd.db.Delete(user, userId).Error
 }
 
-func (gd *GormDb) SignUserIn(user *models.User, w http.ResponseWriter) {
-	cookie := http.Cookie{
-		Name:  "remember",
-		Value: user.Remember,
+func (gd *GormDb) Authenticate(w http.ResponseWriter, user *models.User) (*models.User, error) {
+	user, err := gd.ByEmail(user.Email)
+	if err != nil {
+		return nil, err
 	}
 
-	http.SetCookie(w, &cookie)
+	return user, nil
 }

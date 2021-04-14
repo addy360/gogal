@@ -75,10 +75,13 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panic(err)
 	}
+
 	_, err = u.us.Authenticate(w, user)
 	if err != nil {
-		log.Panic(err.Error())
+		log.Printf("%v", err)
 	}
+
+	u.us.SignUserIn(user, w)
 
 	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
 }
@@ -90,5 +93,11 @@ func (u *User) CookieTest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, cookie)
+	user, err := u.us.ByRemember(cookie.Value)
+	if err != nil {
+		fmt.Fprint(w, err.Error())
+		return
+	}
+
+	fmt.Fprint(w, user)
 }
