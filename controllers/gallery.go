@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"gogal/services"
 	"gogal/views"
 	"net/http"
@@ -26,4 +27,9 @@ func (g *Garrely) Show(w http.ResponseWriter, r *http.Request) {
 
 func (g *Garrely) Create(w http.ResponseWriter, r *http.Request) {
 	g.createView.Render(w, nil)
+}
+
+func (g *Garrely) CreateGallery(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	fmt.Fprint(w, r.PostForm)
 }

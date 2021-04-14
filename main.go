@@ -42,7 +42,8 @@ func main() {
 	r.HandleFunc("/cookie", userController.CookieTest)
 
 	r.HandleFunc("/galleries", galleryController.Show)
-	r.HandleFunc("/gallery", galleryController.Create)
+	r.HandleFunc("/gallery", galleryController.Create).Methods("GET")
+	r.HandleFunc("/gallery", galleryController.CreateGallery).Methods("POST")
 
 	r.NotFoundHandler = &_404{}
 
