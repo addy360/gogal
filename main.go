@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gogal/controllers"
 	"gogal/helpers"
+	"gogal/middlewares"
 	"gogal/services"
 	"log"
 	"net/http"
@@ -40,8 +41,9 @@ func main() {
 	r.HandleFunc("/login", userController.Login).Methods("GET")
 	r.HandleFunc("/login", userController.SignIn).Methods("POST")
 	r.HandleFunc("/cookie", userController.CookieTest)
+	isLoggedIn := middlewares.NewAuthMiddelware(&us)
 
-	r.HandleFunc("/gallery/show", galleryController.Show)
+	r.HandleFunc("/gallery/show", isLoggedIn.IsLoggedIn(http.HandlerFunc(galleryController.Show)))
 	r.HandleFunc("/gallery/create", galleryController.Create).Methods("GET")
 	r.HandleFunc("/gallery/store", galleryController.CreateGallery).Methods("POST")
 
