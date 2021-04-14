@@ -25,6 +25,7 @@ func main() {
 	us := services.NewUserService(connectionString)
 	userController := controllers.NewUser(us)
 	pagesController := controllers.NewPage()
+	galleryController := controllers.NewGarrely()
 	us.TableRefresh()
 	r := mux.NewRouter()
 
@@ -35,6 +36,9 @@ func main() {
 	r.HandleFunc("/login", userController.Login).Methods("GET")
 	r.HandleFunc("/login", userController.SignIn).Methods("POST")
 	r.HandleFunc("/cookie", userController.CookieTest)
+
+	r.HandleFunc("/galleries", galleryController.Show)
+	r.HandleFunc("/gallery", galleryController.Create)
 
 	r.NotFoundHandler = &_404{}
 
