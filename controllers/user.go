@@ -6,7 +6,6 @@ import (
 	"gogal/models"
 	"gogal/services"
 	"gogal/views"
-	"log"
 	"net/http"
 )
 
@@ -25,11 +24,9 @@ type User struct {
 }
 
 func (u *User) New(w http.ResponseWriter, r *http.Request) {
-	a := services.Alert{
-		Level:   "danger",
-		Message: "This is the danger example",
-	}
-
+	a := services.NewAlert()
+	a.Level = a.AlertDanger
+	a.Message = "Testing alert levels"
 	data := map[string]interface{}{
 		"Alert": a,
 	}
@@ -45,15 +42,25 @@ func (u *User) Create(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromRequest(r)
 
 	if err != nil {
-		log.Panic(err)
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.newView.Render(w, data)
 	}
 
 	err = u.us.Create(user)
 
 	if err != nil {
-		fmt.Fprint(w, "Server error")
-		log.Println(err.Error())
-		return
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.newView.Render(w, data)
 	}
 
 	u.us.SignUserIn(user, w)
@@ -65,27 +72,40 @@ func userFromRequest(r *http.Request) (*models.User, error) {
 	var userForm UserForm
 	err := helpers.ParseForm(&userForm, r)
 	if err != nil {
-		log.Panic(err.Error())
+		return nil, err
 	}
 	user := &models.User{
 		Email:   userForm.Name,
 		Pasword: userForm.Password,
 	}
-	return user, err
+	return user, nil
 }
 
 func (u *User) Login(w http.ResponseWriter, r *http.Request) {
+
 	u.loginView.Render(w, nil)
 }
 
 func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 	user, err := userFromRequest(r)
 	if err != nil {
-		log.Panic(err)
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.loginView.Render(w, data)
 	}
 	_, err = u.us.Authenticate(w, user)
 	if err != nil {
-		log.Panic(err.Error())
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.loginView.Render(w, data)
 	}
 
 	http.Redirect(w, r, "/cookie", http.StatusPermanentRedirect)
@@ -94,8 +114,13 @@ func (u *User) SignIn(w http.ResponseWriter, r *http.Request) {
 func (u *User) CookieTest(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("remember")
 	if err != nil {
-		fmt.Fprint(w, "Not authorised")
-		return
+		a := services.NewAlert()
+		a.Message = err.Error()
+		a.Level = a.AlertDanger
+		data := map[string]interface{}{
+			"Alert": a,
+		}
+		u.loginView.Render(w, data)
 	}
 
 	fmt.Fprint(w, cookie)
