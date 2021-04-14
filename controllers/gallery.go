@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"fmt"
+	"gogal/helpers"
+	"gogal/models"
 	"gogal/services"
 	"gogal/views"
 	"net/http"
@@ -21,6 +23,22 @@ type Garrely struct {
 	gs         services.GalleryService
 }
 
+type GalleryForm struct {
+	Title string `schema:"title"`
+}
+
+func galleryFromRequest(r *http.Request) (*models.Gallery, error) {
+	var galleryForm GalleryForm
+	err := helpers.ParseForm(&galleryForm, r)
+	if err != nil {
+		return nil, err
+	}
+	user := &models.Gallery{
+		Title: galleryForm.Title,
+	}
+	return user, nil
+}
+
 func (g *Garrely) Show(w http.ResponseWriter, r *http.Request) {
 	g.showView.Render(w, nil)
 }
@@ -30,6 +48,10 @@ func (g *Garrely) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g *Garrely) CreateGallery(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	fmt.Fprint(w, r.PostForm)
+	gallery, err := galleryFromRequest(r)
+	if err != nil {
+		fmt.Fprint(w, err.Error())
+		return
+	}
+	g.gs.Create(gallery)
 }

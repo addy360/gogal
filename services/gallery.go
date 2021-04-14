@@ -7,10 +7,10 @@ import (
 )
 
 type GalleryDb interface {
-	ById(id uint) (*models.User, error)
-	Create(user *models.Gallery) error
-	Update(user *models.Gallery) error
-	Delete(user *models.Gallery, galleryId uint) error
+	ById(id uint) (*models.Gallery, error)
+	Create(gallery *models.Gallery) error
+	Update(gallery *models.Gallery) error
+	Delete(gallery *models.Gallery, galleryId uint) error
 	TableRefresh()
 }
 
@@ -22,16 +22,16 @@ type GalleryValidator struct {
 	GalleryDb
 }
 
-func (gv *GalleryValidator) ById(id uint) (*models.User, error) {
+func (gv *GalleryValidator) ById(id uint) (*models.Gallery, error) {
 	return nil, nil
 }
-func (gv *GalleryValidator) Create(user *models.Gallery) error {
+func (gv *GalleryValidator) Create(gallery *models.Gallery) error {
+	return gv.GalleryDb.Create(gallery)
+}
+func (gv *GalleryValidator) Update(gallery *models.Gallery) error {
 	return nil
 }
-func (gv *GalleryValidator) Update(user *models.Gallery) error {
-	return nil
-}
-func (gv *GalleryValidator) Delete(user *models.Gallery, galleryId uint) error {
+func (gv *GalleryValidator) Delete(gallery *models.Gallery, galleryId uint) error {
 	return nil
 }
 func (gv *GalleryValidator) TableRefresh() {
@@ -62,16 +62,16 @@ type GalleryGormDb struct {
 	db *gorm.DB
 }
 
-func (g *GalleryGormDb) ById(id uint) (*models.User, error) {
+func (g *GalleryGormDb) ById(id uint) (*models.Gallery, error) {
 	return nil, nil
 }
-func (g *GalleryGormDb) Create(user *models.Gallery) error {
+func (g *GalleryGormDb) Create(gallery *models.Gallery) error {
+	return g.db.Create(gallery).Error
+}
+func (g *GalleryGormDb) Update(gallery *models.Gallery) error {
 	return nil
 }
-func (g *GalleryGormDb) Update(user *models.Gallery) error {
-	return nil
-}
-func (g *GalleryGormDb) Delete(user *models.Gallery, galleryId uint) error {
+func (g *GalleryGormDb) Delete(gallery *models.Gallery, galleryId uint) error {
 	return nil
 }
 func (g *GalleryGormDb) TableRefresh() {
