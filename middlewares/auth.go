@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"gogal/helpers"
 	"gogal/services"
 	"net/http"
 )
@@ -23,11 +24,14 @@ func (am *Auth) IsLoggedIn(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		_, err = am.us.ByRemember(cookie.Value)
+		user, err := am.us.ByRemember(cookie.Value)
 		if err != nil {
 			http.Redirect(rw, r, "/login", http.StatusTemporaryRedirect)
 			return
 		}
+		contx := r.Context()
+		ctx := helpers.SetUserToContext(contx, user)
+		r = r.WithContext(ctx)
 		next(rw, r)
 
 	})

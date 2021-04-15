@@ -40,7 +40,11 @@ func galleryFromRequest(r *http.Request) (*models.Gallery, error) {
 }
 
 func (g *Garrely) Show(w http.ResponseWriter, r *http.Request) {
-	g.showView.Render(w, nil)
+	user := helpers.GetUserFromContex(r.Context())
+	data := map[string]interface{}{
+		"user": *user,
+	}
+	g.showView.Render(w, data)
 }
 
 func (g *Garrely) Create(w http.ResponseWriter, r *http.Request) {

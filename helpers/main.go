@@ -1,10 +1,12 @@
 package helpers
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"gogal/models"
 	"hash"
 	"log"
 	"net/http"
@@ -82,4 +84,14 @@ func DbConnection(connectionString string) *gorm.DB {
 	}
 
 	return db
+}
+
+type CtxUser struct{}
+
+func SetUserToContext(ctx context.Context, user *models.User) context.Context {
+	return context.WithValue(context.Background(), CtxUser{}, user)
+}
+
+func GetUserFromContex(ctx context.Context) *models.User {
+	return ctx.Value(CtxUser{}).(*models.User)
 }
